@@ -1,1 +1,1 @@
-create schema demo;
+create schema tbot;

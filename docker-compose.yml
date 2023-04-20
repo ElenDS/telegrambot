@@ -1,22 +1,22 @@
 version: "3.7"
 
 networks:
-  demo-network:
-    name: demo-network
+  tbot-network:
+    name: tbot-network
 #    external: true
-  demo-proxy.network:
-    name: demo-proxy.network
+  tbot-proxy.network:
+    name: tbot-proxy.network
 #    external: true
 
 services:
-  demo-app:
-    container_name: demo-app
+  tbot-app:
+    container_name: tbot-app
     build:
       context: ./docker/php
       dockerfile: Dockerfile
     depends_on:
-      - demo-mysql
-      - demo-redis
+      - tbot-mysql
+      - tbot-redis
     env_file:
       - .env
     volumes:
@@ -24,83 +24,83 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway" #for xDebug
     networks:
-      - demo-network
+      - tbot-network
 
-  demo-app-nginx:
-    container_name: demo-app-nginx
+  tbot-app-nginx:
+    container_name: tbot-app-nginx
     build:
       context: ./docker/nginx
     depends_on:
-      - demo-app
+      - tbot-app
     volumes:
       - ./public:/app/public:cached
     networks:
-      - demo-network
-      - demo-proxy.network
+      - tbot-network
+      - tbot-proxy.network
     labels:
       - traefik.enable=true
-      - traefik.http.routers.demo-nginx.rule=Host(`demo.localhost`)
+      - traefik.http.routers.tbot-nginx.rule=Host(`tbot.localhost`)
 
-  demo-redis:
-    container_name: demo-redis
+  tbot-redis:
+    container_name: tbot-redis
     build:
       context: ./docker/redis
     command: redis-server --appendonly yes
     hostname: "redis"
     volumes:
-      - demo-redis-storage:/data
+      - tbot-redis-storage:/data
     networks:
-      - demo-network
-      - demo-proxy.network
+      - tbot-network
+      - tbot-proxy.network
     labels:
       - traefik.enable=true
-      - traefik.tcp.services.demo-redis.loadBalancer.server.port=6379
-      - traefik.tcp.routers.demo-redis.entrypoints=redis
-      - traefik.tcp.routers.demo-redis.rule=HostSNI(`*`)
-      - traefik.tcp.routers.demo-redis.service=demo-redis
+      - traefik.tcp.services.tbot-redis.loadBalancer.server.port=6379
+      - traefik.tcp.routers.tbot-redis.entrypoints=redis
+      - traefik.tcp.routers.tbot-redis.rule=HostSNI(`*`)
+      - traefik.tcp.routers.tbot-redis.service=tbot-redis
 
-  demo-mysql:
-    container_name: demo-mysql
+  tbot-mysql:
+    container_name: tbot-mysql
     build:
       context: ./docker/mysql
     volumes:
-      - demo-mysql-storage:/var/lib/mysql
+      - tbot-mysql-storage:/var/lib/mysql
       - ./docker/mysql/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
     environment:
       MYSQL_ROOT_PASSWORD: 'root'
     networks:
-      - demo-network
-      - demo-proxy.network
+      - tbot-network
+      - tbot-proxy.network
     labels:
       - traefik.enable=true
-      - traefik.tcp.services.demo-mysql.loadBalancer.server.port=3306
-      - traefik.tcp.routers.demo-mysql.entrypoints=mysql
-      - traefik.tcp.routers.demo-mysql.rule=HostSNI(`*`)
-      - traefik.tcp.routers.demo-mysql.service=demo-mysql
+      - traefik.tcp.services.tbot-mysql.loadBalancer.server.port=3306
+      - traefik.tcp.routers.tbot-mysql.entrypoints=mysql
+      - traefik.tcp.routers.tbot-mysql.rule=HostSNI(`*`)
+      - traefik.tcp.routers.tbot-mysql.service=tbot-mysql
 
-  demo-rabbit:
-    container_name: demo-rabbit
+  tbot-rabbit:
+    container_name: tbot-rabbit
     build:
       context: ./docker/rmq
     volumes:
-      - demo-rabbit-storage:/var/lib/rabbitmq
+      - tbot-rabbit-storage:/var/lib/rabbitmq
     networks:
-      - demo-network
-      - demo-proxy.network
+      - tbot-network
+      - tbot-proxy.network
     labels:
       - traefik.enable=true
-      - traefik.tcp.services.demo-rabbit.loadBalancer.server.port=5672
-      - traefik.tcp.routers.demo-rabbit.entrypoints=rabbit
-      - traefik.tcp.routers.demo-rabbit.rule=HostSNI(`*`)
-      - traefik.tcp.routers.demo-rabbit.service=demo-rabbit
+      - traefik.tcp.services.tbot-rabbit.loadBalancer.server.port=5672
+      - traefik.tcp.routers.tbot-rabbit.entrypoints=rabbit
+      - traefik.tcp.routers.tbot-rabbit.rule=HostSNI(`*`)
+      - traefik.tcp.routers.tbot-rabbit.service=tbot-rabbit
 
-  demo-proxy:
-    container_name: demo-proxy
+  tbot-proxy:
+    container_name: tbot-proxy
     image: traefik:v2.5
     command:
       - --providers.docker
       - --providers.docker.exposedByDefault=false
-      - --providers.docker.network=demo-proxy.network
+      - --providers.docker.network=tbot-proxy.network
       - --providers.docker.useBindPortIP=false
       - --entrypoints.web.address=:80
       - --entrypoints.redis.address=:6379
@@ -116,14 +116,14 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
-      - demo-proxy.network
+      - tbot-proxy.network
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.api.entrypoints=web"
-      - "traefik.http.routers.api.rule=Host(`demo-proxy.localhost`)"
+      - "traefik.http.routers.api.rule=Host(`tbot-proxy.localhost`)"
       - "traefik.http.routers.api.service=api@internal"
 
 volumes:
-  demo-redis-storage:
-  demo-mysql-storage:
-  demo-rabbit-storage:
+  tbot-redis-storage:
+  tbot-mysql-storage:
+  tbot-rabbit-storage:
